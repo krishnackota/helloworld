@@ -18,7 +18,7 @@ jobs:
   maven-job:
     docker:
       # replace with your preferred image
-      - image: cimg/base:stable
+      - image: circleci/openjdk:11.0.3-jdk-stretch 
     steps:
       - checkout
       - run:
