@@ -3,7 +3,7 @@
 version: 2.1
 
 orbs:
-  buildkit: springload/buildkit@0.0.6
+  buildkit: springload/buildkit@0.0.6 
 jobs:
   build_test_and_push_image:
     executor: buildkit/default
