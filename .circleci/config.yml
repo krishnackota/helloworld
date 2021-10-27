@@ -3,11 +3,48 @@
 version: 2.1
 
 orbs:
-  maven: circleci/maven@1.2.0
-
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+  buildkit: springload/buildkit@0.0.6
 jobs:
+  build_test_and_push_image:
+    executor: buildkit/default
+    steps:
+      - buildkit/builder:
+          builds:
+            - buildkit/build:
+                target: app
+                tag: app
+                path: docker/application
+            - buildkit/build:
+                target: app-test
+                tag: app-test
+                path: docker/application
+            - buildkit/build:
+                target: tasks
+                tag: tasks
+                path: docker/application
+            - buildkit/build:
+                tag: httpd
+                context: docker/httpd
+                path: docker/httpd
+          after-builds:
+            - run:
+                name: run tests
+                command: |-
+                  docker run --name=database --expose 5432 \
+                      -ePOSTGRES_DB=${PROJECT}_test \
+                      -d postgres:10-alpine
+                  docker run --name=cache --expose 6379 -d redis:4-alpine
+                  docker run \
+                      -i --name app-test --rm \
+                      --link=database --link=cache \
+                      -eDATABASE_URL="postgres://postgres@database/${PROJECT}_test" \
+                      -eENVIRONMENT=test \
+                      -eDJANGO_SETTINGS_MODULE=app.settings.base \
+                      -eCACHE_URL=redis://cache:6379/0 \
+                      -eTASK_QUEUE_URL=redis://cache:6379/1 \
+                      app-test
+
+                      # Define a job to be invoked later in a workflow.
   say-hello:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -26,7 +63,7 @@ jobs:
 workflows:
   compile-workflow:
       jobs:
-        - maven/parallel_test             
+        - build_test_and_push_image            
   say-hello-workflow:
     jobs:
       - say-hello
