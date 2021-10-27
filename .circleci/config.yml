@@ -3,7 +3,7 @@
 version: 2.1
 
 orbs:
-  maven: circleci/maven@1.2.0
+  maven: drift/maven@0.1.13
   
 jobs:
   say-hello:
@@ -18,6 +18,12 @@ jobs:
       - run:
           name: "Say hello"
           command: "echo Hello, World!"
+  maven-job:
+    docker:
+      # replace with your preferred image
+      - image: cimg/base:stable
+    steps:
+      - maven/build-jar
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
@@ -25,4 +31,4 @@ workflows:
   Build-workflow:
     jobs:
       - say-hello
-      - maven/parallel_test
+      - maven-job
